@@ -1,0 +1,751 @@
+{
+    "name": "[COPY] My workflow 2LinkedIn posts using a n8n AI agent",
+    "nodes": [
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "575ea4c1-29ae-4624-a936-61e62205b290",
+        "name": "When clicking ‘Test workflow’"
+      },
+      {
+        "parameters": {
+          "url": "https://venturebeat.com/category/ai/feed/",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.rssFeedRead",
+        "typeVersion": 1.1,
+        "position": [
+          220,
+          0
+        ],
+        "id": "61760064-93f9-4584-80d7-a102ee670696",
+        "name": "RSS Read"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "b35522ca-68b4-4ef6-aaea-d94371cccedd",
+                "name": "title",
+                "value": "={{ $json.title }}",
+                "type": "string"
+              },
+              {
+                "id": "ccab7a5b-ae95-434b-928c-678f3cb434fb",
+                "name": "link",
+                "value": "={{ $json.link }}",
+                "type": "string"
+              },
+              {
+                "id": "80287f33-91e4-4988-a214-fa6953943b40",
+                "name": "contentSnippet",
+                "value": "={{ $json.contentSnippet }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          440,
+          0
+        ],
+        "id": "cd968103-e199-4f23-942b-29a8140ba4b1",
+        "name": "Edit Fields"
+      },
+      {
+        "parameters": {
+          "aggregate": "aggregateAllItemData",
+          "destinationFieldName": "news",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.aggregate",
+        "typeVersion": 1,
+        "position": [
+          660,
+          0
+        ],
+        "id": "c8e2f373-fee4-46eb-8a23-8d57d7804bff",
+        "name": "Aggregate"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Você é um curador e redator especializado em inteligência artificial aplicada aos negócios. Preciso que analise os 5 artigos a seguir e gere um resumo semanal claro, interessante e estratégico. O público são CEOs, diretores e gestores de pequenas e médias empresas que querem aplicar IA no dia a dia com foco em eficiência, redução de desperdícios e crescimento sustentável.\n\nSua missão:\n\nResuma cada artigo em até 4 linhas, destacando o que realmente importa (evite jargões e exageros de hype).\n\nFoque apenas em conteúdos com aplicação prática e acessível para PMEs.\n\nUse uma linguagem envolvente, com toques de curiosidade e autoridade, como se fosse uma newsletter premium de tendências.\n\nEvite temas genéricos ou voltados a big techs que não se conectem à realidade operacional das PMEs.\"\n\n\n\n{{ JSON.stringify($json.news) }}\n",
+          "hasOutputParser": true
+        },
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.6,
+        "position": [
+          880,
+          0
+        ],
+        "id": "dd549d3f-f36d-4b6a-a1e6-afe95a5cd8d0",
+        "name": "Basic LLM Chain"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "mode": "list",
+            "value": "gpt-4o-mini"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          860,
+          200
+        ],
+        "id": "69d43b3f-0cd2-4227-988a-e821fe9c1421",
+        "name": "OpenAI Chat Model",
+        "credentials": {
+          "openAiApi": {
+            "id": "nLPqEkDIvwVLWo7n",
+            "name": "OpenAi account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsonSchemaExample": "{\n\t\"articles\" : [{\n      \"title\"  : \"\", \n      \"link\" : \"\"\n    }]\n}"
+        },
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.2,
+        "position": [
+          1060,
+          200
+        ],
+        "id": "0cdee11a-cb69-42a4-9909-9bed91d3a7c4",
+        "name": "Structured Output Parser"
+      },
+      {
+        "parameters": {
+          "fieldToSplitOut": "output.articles",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          1240,
+          0
+        ],
+        "id": "986b670d-472a-4a1f-b0db-a4ad016d42dc",
+        "name": "Split Out"
+      },
+      {
+        "parameters": {
+          "url": "={{ $json.link }}",
+          "options": {
+            "redirect": {
+              "redirect": {}
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1460,
+          0
+        ],
+        "id": "48dc3274-f620-4903-b38c-45dc59a093a3",
+        "name": "HTTP Request"
+      },
+      {
+        "parameters": {
+          "operation": "extractHtmlContent",
+          "extractionValues": {
+            "values": [
+              {
+                "key": "article",
+                "cssSelector": "article",
+                "skipSelectors": ".post-boilerplate,.boilerplate-befor"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.html",
+        "typeVersion": 1.2,
+        "position": [
+          1680,
+          0
+        ],
+        "id": "7ff9c4ef-9288-4d3b-93aa-a6a1220dd894",
+        "name": "HTML"
+      },
+      {
+        "parameters": {
+          "aggregate": "aggregateAllItemData",
+          "destinationFieldName": "articles",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.aggregate",
+        "typeVersion": 1,
+        "position": [
+          1900,
+          0
+        ],
+        "id": "5f2feaf2-5ee7-4593-977f-a3c4f14a45fa",
+        "name": "Aggregate1"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Com base nos artigos abaixo, crie um post de LinkedIn envolvente, direto e com apelo estratégico voltado para CEOs, diretores, founders e gestores de pequenas e médias empresas.\n\nRegras e estilo:\n- Pense em um post com SEO e AEO estratégico.\n- A leitura deve ser gostosa e fluida.\n– Escreva em texto simples, sem formatação Markdown.\n– Comece com um gancho impactante: duas frases curtas que despertem curiosidade e mencionem o uso de IA de forma provocativa.\n– Intercale dados e afirmações com perguntas retóricas que humanizem a leitura (ex: “Já imaginou?”, “E se sua empresa já usasse isso hoje?”).\n– Apresente os fatos com foco em utilidade prática, mostrando como a IA ajuda a economizar tempo, resolver problemas do dia a dia ou impulsionar o crescimento com eficiência.\n– Evite termos genéricos ou sensacionalistas: seja específico, interessante e útil.\n– Finalize com uma pergunta provocativa + um CTA explícito (ex: “Como você aplicaria isso no seu time?”, “Vamos conversar sobre como adaptar isso à sua realidade?”).\n– Não adicione links no post.\n– Adicione hashtags estratégicas no final (ex: #ia #inteligenciaartificial #InteligenciaArtificial #Gestão #InovaçãoNasPMEs).\n\n\n<articles>\n{{ JSON.stringify($json.articles) }}\n</articles>\n"
+        },
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.6,
+        "position": [
+          2120,
+          0
+        ],
+        "id": "10b8ed87-2095-4486-99bd-baba7bde0bf0",
+        "name": "Basic LLM Chain1"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "mode": "list",
+            "value": "gpt-4o-mini"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          2120,
+          160
+        ],
+        "id": "39e53cb7-5e83-4f17-b038-5988d1c0d8cd",
+        "name": "OpenAI Chat Model1",
+        "credentials": {
+          "openAiApi": {
+            "id": "nLPqEkDIvwVLWo7n",
+            "name": "OpenAi account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Reescreva a seguinte publicação do LinkedIn para corresponder ao estilo da publicação de exemplo. O texto deve gerar curiosidade. Certifique-se de que o texto esteja em texto simples e com a formatação IGUAL ao exemplo. \n\n<ExamplePost>\nO futuro das compras online pode já não estar mais nas mãos... humanas.\n\nOs agentes de inteligência artificial com poder de compra chegaram para transformar o e-commerce como conhecemos.\n\nEstamos falando de softwares que pesquisam, selecionam, recomendam e até fazem pagamentos em nome do consumidor.\n\nEmpresas como Mastercard, Microsoft e IBM já estão testando e escalando soluções capazes de:\n🔸Personalizar recomendações com base no histórico de compras\n🔸Automatizar pagamentos com segurança\n🔸Recuperar carrinhos abandonados com estratégias sob medida\n🔸Reduzir custos operacionais e aumentar o ticket médio\n\nO Mastercard Agent Pay, por exemplo, permite que a IA feche a compra para você, sempre com a última palavra do usuário.\n\nJá pensou pedir a um agente para comprar aquele presente atrasado e ele simplesmente resolver?\n\nOs resultados impressionam:\n🔸Aumento de até 30 por cento nas conversões\n🔸Redução de custos em cerca de 30 por cento\n🔸Casos como o da Dzarm, que cresceu 150 por cento nas vendas de Black Friday com IA\n\nMas calma, não é só magia tecnológica.\n\nPor trás dessa revolução, surgem discussões éticas importantes:\n🔸Como garantir privacidade? \n🔸Como evitar vieses nos algoritmos? \n🔸Como manter o consumidor no controle final?\n\nO que fica claro é que as empresas que entenderem e aplicarem essa tecnologia agora vão liderar o jogo do e-commerce nos próximos anos.\n\nVocê já consegue imaginar o impacto disso no seu negócio ou na sua experiência como consumidor?\n</ExamplePost>\n\n<Article>\n {{ $json.text }}\n</Article>"
+        },
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.6,
+        "position": [
+          2480,
+          0
+        ],
+        "id": "4ed39583-e7c7-4069-a9a5-3077e24bc4c4",
+        "name": "Basic LLM Chain2"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gpt-4o",
+            "mode": "list",
+            "cachedResultName": "gpt-4o"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          2500,
+          180
+        ],
+        "id": "08220e4b-a55f-4562-b8ec-20a69a34be56",
+        "name": "OpenAI Chat Model2",
+        "credentials": {
+          "openAiApi": {
+            "id": "nLPqEkDIvwVLWo7n",
+            "name": "OpenAi account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "sendAndWait",
+          "sendTo": "myllenacerq.contato@gmail.com",
+          "subject": "=[VALIDATION] LinkedIn Post",
+          "message": "={{ $json.linkedin_post }}",
+          "responseType": "customForm",
+          "formFields": {
+            "values": [
+              {
+                "fieldLabel": "Post Validado? ✨",
+                "fieldType": "dropdown",
+                "fieldOptions": {
+                  "values": [
+                    {
+                      "option": "Sim, pode seguir! 😄"
+                    },
+                    {
+                      "option": "Não, sugerir melhorias! 🤔"
+                    }
+                  ]
+                },
+                "requiredField": true
+              },
+              {
+                "fieldLabel": "Alterações Sugeridas 👇",
+                "fieldType": "textarea",
+                "placeholder": "O que você gostaria de sugerir?  "
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          3060,
+          0
+        ],
+        "id": "50aeade0-e540-47a0-a019-a769bb43a85f",
+        "name": "Gmail",
+        "webhookId": "8088ff4c-9694-42bb-ad3c-63525bf6ab9d",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "Nar6fWxOWLqRLEnz",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "ac445c73-510c-47d4-9830-b46cea04484d",
+                "leftValue": "={{ $json.data['Post Validado? ✨'] }}",
+                "rightValue": "Sim, pode seguir! 😄",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals",
+                  "name": "filter.operator.equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3280,
+          0
+        ],
+        "id": "078f2c97-4338-46c1-b221-a1302ab3d914",
+        "name": "If"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Apply the modification requests on the following LinkedIn post. Besides applying the requested modifications, return the same linkedin post.\n\nLinkedIn post:\n```\n{{ $('Gmail').item.json.linkedin_post }}\n```\n\n\nChange requests:\n{{ $json.data['Alterações Sugeridas 👇'] }}",
+          "hasOutputParser": true
+        },
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.6,
+        "position": [
+          3500,
+          100
+        ],
+        "id": "0a5c46f6-55c0-4b35-95fd-fc3f81e30d2f",
+        "name": "Basic LLM Chain3"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "mode": "list",
+            "value": "gpt-4o-mini"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          3600,
+          320
+        ],
+        "id": "25caa6f7-b1d3-4cae-bb45-c1647d0135ad",
+        "name": "OpenAI Chat Model3",
+        "credentials": {
+          "openAiApi": {
+            "id": "nLPqEkDIvwVLWo7n",
+            "name": "OpenAi account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsonSchemaExample": "{\n  \"modified_post\": \"\"\n}"
+        },
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.2,
+        "position": [
+          3740,
+          320
+        ],
+        "id": "bd94f0ea-ee26-46b1-a149-4c0924e8a49d",
+        "name": "Structured Output Parser1"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1ec131a4-0189-4a48-9009-82c8df93e6d2",
+                "name": "linkedin_post",
+                "value": "={{ $json.text }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2840,
+          0
+        ],
+        "id": "f2abe827-dff2-4187-9984-b3f3fbb329c4",
+        "name": "Edit Fields1"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "8a2d4968-daff-420a-b498-a93d12116a85",
+                "name": "text",
+                "value": "={{ $json.output.modified_post }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          3940,
+          360
+        ],
+        "id": "5ac4d840-40c2-4fb0-80af-14df5177bde3",
+        "name": "Edit Fields2"
+      },
+      {
+        "parameters": {
+          "postAs": "organization",
+          "organization": "106914025",
+          "text": "={{ $('Edit Fields1').item.json.linkedin_post }}",
+          "additionalFields": {}
+        },
+        "type": "n8n-nodes-base.linkedIn",
+        "typeVersion": 1,
+        "position": [
+          3500,
+          -100
+        ],
+        "id": "1bba87bf-3c10-419b-837d-50a79890e6de",
+        "name": "LinkedIn",
+        "credentials": {
+          "linkedInOAuth2Api": {
+            "id": "vTKgYUC63J1U7UTF",
+            "name": "LinkedIn account"
+          }
+        }
+      }
+    ],
+    "pinData": {
+      "When clicking ‘Test workflow’": [
+        {
+          "json": {}
+        }
+      ]
+    },
+    "connections": {
+      "When clicking ‘Test workflow’": {
+        "main": [
+          [
+            {
+              "node": "RSS Read",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "RSS Read": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Edit Fields": {
+        "main": [
+          [
+            {
+              "node": "Aggregate",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Aggregate": {
+        "main": [
+          [
+            {
+              "node": "Basic LLM Chain",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Basic LLM Chain",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Structured Output Parser": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "Basic LLM Chain",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Basic LLM Chain": {
+        "main": [
+          [
+            {
+              "node": "Split Out",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Out": {
+        "main": [
+          [
+            {
+              "node": "HTTP Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP Request": {
+        "main": [
+          [
+            {
+              "node": "HTML",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTML": {
+        "main": [
+          [
+            {
+              "node": "Aggregate1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Aggregate1": {
+        "main": [
+          [
+            {
+              "node": "Basic LLM Chain1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model1": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Basic LLM Chain1",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Basic LLM Chain1": {
+        "main": [
+          [
+            {
+              "node": "Basic LLM Chain2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model2": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Basic LLM Chain2",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Basic LLM Chain2": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Gmail": {
+        "main": [
+          [
+            {
+              "node": "If",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If": {
+        "main": [
+          [
+            {
+              "node": "LinkedIn",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Basic LLM Chain3",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model3": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Basic LLM Chain3",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Structured Output Parser1": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "Basic LLM Chain3",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Edit Fields1": {
+        "main": [
+          [
+            {
+              "node": "Gmail",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Basic LLM Chain3": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Edit Fields2": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "active": false,
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "versionId": "620d0cdf-b264-475d-b544-d46c8e7d996c",
+    "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": "c6b967c0b2eed047a285a96ade2dd13aab1bd60be543d147a0b33f65c30f0d62"
+    },
+    "id": "ycFKCoweh6WgWn06",
+    "tags": []
+  }
